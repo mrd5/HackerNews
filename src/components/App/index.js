@@ -1,6 +1,7 @@
 import React, { Component } from 'react';
 import axios from 'axios'; //used to make asynchronous requests to remote apis
 import './index.css';
+import { sortBy } from 'lodash';
 import {
   DEFAULT_QUERY,
   DEFAULT_HITSPERPAGE,
@@ -14,7 +15,23 @@ import Button from '../Button';
 import Search from '../Search';
 import Table from '../Table';
 
+const SORTS = {
+  NONE: list => list,
+  TITLE: list => sortBy(list, 'title'),
+  AUTHOR: list => sortBy(list, 'author'),
+  COMMENTS: list => sortBy(list, 'num_comments').reverse(),
+  POINTS: list => sortBy(list, 'points').reverse(),
+};
 
+const withLoading = (Component) => ({ isLoading, ...rest }) =>
+  isLoading
+    ? <Loading />
+    : <Component { ...rest } />
+
+const ButtonWithLoading = withLoading(Button);
+
+const Loading = () =>
+  <div>Loading...</div>
 
 
 const isSearched = searchTerm => item => 
@@ -32,6 +49,8 @@ class App extends Component {//functionalities from Component passed over to App
       searchKey: '',
       searchTerm: DEFAULT_QUERY,
       error: null,
+      isLoading: false,
+      sortKey: 'NONE',
     };
 
     this.needsToSearchTopStories = this.needsToSearchTopStories.bind(this);
@@ -40,6 +59,7 @@ class App extends Component {//functionalities from Component passed over to App
     this.onSearchSubmit = this.onSearchSubmit.bind(this);
     this.onSearchChange = this.onSearchChange.bind(this);
     this.onDismiss = this.onDismiss.bind(this);
+    this.onSort = this.onSort.bind(this);
   }
 
   needsToSearchTopStories(searchTerm) {
@@ -47,6 +67,8 @@ class App extends Component {//functionalities from Component passed over to App
   }
 
   fetchSearchTopStories(searchTerm, page = 0){
+    this.setState({ isLoading: true});
+
     axios(`${PATH_BASE}${PATH_SEARCH}?${PARAM_SEARCH}${searchTerm}&${PARAM_PAGE}${page}&${PARAM_HITSPERPAGE}${DEFAULT_HITSPERPAGE}`)
       .then(result => this._isMounted && this.setSearchTopStories(result.data))
       .catch(error => this._isMounted && this.setState({ error }));
@@ -69,7 +91,8 @@ class App extends Component {//functionalities from Component passed over to App
       results: {
         ...results,
         [searchKey]: { hits: updatedHits, page }
-      }
+      },
+      isLoading: false
     });
   }
 
@@ -103,6 +126,10 @@ class App extends Component {//functionalities from Component passed over to App
     });
   }
 
+  onSort(sortKey){
+    this.setState({ sortKey });
+  }
+
   componentDidMount() {
     this._isMounted = true;
     const { searchTerm } = this.state;
@@ -123,6 +150,8 @@ class App extends Component {//functionalities from Component passed over to App
         results,
         searchKey,
         error,
+        isLoading,
+        sortKey,
       } = this.state;
 
     const page = (
@@ -151,13 +180,17 @@ class App extends Component {//functionalities from Component passed over to App
             </div>
           : <Table
             list={ list }
+            sortKey={sortKey}
+            onSort={this.onSort}
             onDismiss={ this.onDismiss }
           />
         }
         <div className="interactions">
-          <Button onClick={() => this.fetchSearchTopStories(searchKey, page + 1)}>
-            Next page
-          </Button> 
+          <ButtonWithLoading
+            isLoading={isLoading}
+              onClick={() => this.fetchSearchTopStories(searchKey, page + 1)}>
+              More
+            </ButtonWithLoading>
         </div>
       </div>
     );
@@ -169,3 +202,9 @@ class App extends Component {//functionalities from Component passed over to App
 
 
 export default App;
+
+export {
+  Button,
+  Search,
+  Table,
+};
