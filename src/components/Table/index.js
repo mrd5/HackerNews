@@ -1,14 +1,16 @@
 import React, { Component } from 'react';
 import Button from '../Button';
+import PropTypes from 'prop-types';
+import { sortBy } from 'lodash';
 import {
 	smallCol,
 	medCol,
 	largeCol,
 } from '../../constants';
 
-const Table = ({list, onDismiss}) =>
+const Table = ({list, sortKey, onSort, onDismiss}) =>
   <div className="table">
-      {list.map(item =>
+      {SORTS[sortKey](list).map(item =>
         <div key={item.objectID} className="table-row">
 
           <span style={ largeCol }>
@@ -30,5 +32,18 @@ const Table = ({list, onDismiss}) =>
         </div>
       )}
     </div>
+
+Table.propTypes = {
+  list: PropTypes.arrayOf(
+    PropTypes.shape({
+      objectID: PropTypes.string.isRequired,
+      author: PropTypes.string,
+      url: PropTypes.string,
+      num_comments: PropTypes.number,
+      points: PropTypes.number,
+    })
+  ).isRequired,
+  onDismiss: PropTypes.func.isRequired,
+};
 
 export default Table;
