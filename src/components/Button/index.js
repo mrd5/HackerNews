@@ -1,6 +1,8 @@
-import React, { Component } from 'react';
+import React from 'react';
 import PropTypes from 'prop-types';
 
+
+//Stateless Button component
 const Button = ({onClick, className, children}) =>
   <button
     onClick = {onClick}
@@ -16,7 +18,7 @@ Button.defaultProps = {
 }
 
 Button.propTypes = {
-	onClick: PropTypes.func.isRequired,
+	onClick: PropTypes.func,
 	className: PropTypes.string,
 	children: PropTypes.node.isRequired,
 };

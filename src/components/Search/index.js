@@ -1,6 +1,7 @@
 import React, { Component } from 'react';
 import PropTypes from 'prop-types';
 
+//Search component (has state, unlike Button/Search)
 class Search extends Component {
   componentDidMount() {
     if(this.input) {
@@ -32,8 +33,8 @@ class Search extends Component {
 
 Search.propTypes = {
   value: PropTypes.string,
-  onChange: PropTypes.func.isRequired,
-  onSubmit: PropTypes.func.isRequired,
+  onChange: PropTypes.func,
+  onSubmit: PropTypes.func,
   children: PropTypes.node.isRequired,
 }
 

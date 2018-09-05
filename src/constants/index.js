@@ -1,3 +1,5 @@
+//Constants used throughout the app
+
 export const DEFAULT_QUERY = 'redux';
 export const DEFAULT_HITSPERPAGE = '100';
 export const PATH_BASE = 'https://hn.algolia.com/api/v1';

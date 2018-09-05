@@ -1,7 +1,6 @@
 import React, { Component } from 'react';
 import axios from 'axios'; //used to make asynchronous requests to remote apis
 import './index.css';
-import { sortBy } from 'lodash';
 import {
   DEFAULT_QUERY,
   DEFAULT_HITSPERPAGE,
@@ -15,14 +14,33 @@ import Button from '../Button';
 import Search from '../Search';
 import Table from '../Table';
 
-const SORTS = {
-  NONE: list => list,
-  TITLE: list => sortBy(list, 'title'),
-  AUTHOR: list => sortBy(list, 'author'),
-  COMMENTS: list => sortBy(list, 'num_comments').reverse(),
-  POINTS: list => sortBy(list, 'points').reverse(),
-};
 
+//Higher order function (function that returns a function) which updates the state depending on the previous state
+const updateSearchTopStoriesState = (hits, page) => (prevState) => {
+  const { searchKey, results } = prevState;
+
+  const oldHits = results && results[searchKey]
+    ? results[searchKey].hits
+    : [];
+
+  //... is the spread operator, where every value from array/object gets used/copied
+  const updatedHits = [
+  ...oldHits, //eg. every value from within oldHits
+  ...hits,
+  ];
+
+  return {
+    results: {
+      ...results,
+      [searchKey]: { hits: updatedHits, page }
+      },
+      isLoading: false
+  };
+}
+
+//Checks if the page is currently loading the results
+//If it is loading, returns a Loading... message for the user
+//Else returns the input component
 const withLoading = (Component) => ({ isLoading, ...rest }) =>
   isLoading
     ? <Loading />
@@ -30,41 +48,41 @@ const withLoading = (Component) => ({ isLoading, ...rest }) =>
 
 const ButtonWithLoading = withLoading(Button);
 
+//Message that is displayed to the user while results are loading
 const Loading = () =>
   <div>Loading...</div>
 
 
-const isSearched = searchTerm => item => 
-  item.title.toLowerCase().includes(searchTerm.toLowerCase());
-//filter function takes a funtion as input
-
 class App extends Component {//functionalities from Component passed over to App
-  _isMounted = false;
+ 
+   _isMounted = false;//Used to keep track of component's state
 
   constructor(props){//initializes internal component state. called only once
     super(props);
 
-    this.state = {
-      results: null,
-      searchKey: '',
-      searchTerm: DEFAULT_QUERY,
-      error: null,
-      isLoading: false,
-      sortKey: 'NONE',
+    this.state = {//State of the current object, can access within the whole component
+      results: null,            //Zero results before a request is made to the API
+      searchKey: '',            //Stores each result
+      searchTerm: DEFAULT_QUERY,//Search query to be passed to the API
+      error: null,              //Used for error handling. Will display an error message if something has gone wrong
+      isLoading: false,         //If the app is loading the results from the API
     };
 
+    //Prevents app from sending an API request on each search submit for the SAME query
     this.needsToSearchTopStories = this.needsToSearchTopStories.bind(this);
     this.fetchSearchTopStories = this.fetchSearchTopStories.bind(this);
     this.setSearchTopStories = this.setSearchTopStories.bind(this);
     this.onSearchSubmit = this.onSearchSubmit.bind(this);
     this.onSearchChange = this.onSearchChange.bind(this);
     this.onDismiss = this.onDismiss.bind(this);
-    this.onSort = this.onSort.bind(this);
+
   }
 
-  needsToSearchTopStories(searchTerm) {
-    return (!this.state.results[searchTerm]);
+  needsToSearchTopStories(searchTerm) {//Only one API request per query at a time
+      return (!this.state.results[searchTerm]);
   }
+
+  
 
   fetchSearchTopStories(searchTerm, page = 0){
     this.setState({ isLoading: true});
@@ -76,24 +94,7 @@ class App extends Component {//functionalities from Component passed over to App
 
   setSearchTopStories(result) {
     const { hits, page } = result;
-    const { searchKey, results } = this.state;
- 
-    const oldHits = results && results[searchKey]
-      ? results[searchKey].hits
-      : [];
-
-    const updatedHits = [
-      ...oldHits,
-      ...hits
-    ];
-
-    this.setState({
-      results: {
-        ...results,
-        [searchKey]: { hits: updatedHits, page }
-      },
-      isLoading: false
-    });
+    this.setState(updateSearchTopStoriesState(hits, page));
   }
 
   onSearchSubmit(event) {
@@ -126,9 +127,7 @@ class App extends Component {//functionalities from Component passed over to App
     });
   }
 
-  onSort(sortKey){
-    this.setState({ sortKey });
-  }
+
 
   componentDidMount() {
     this._isMounted = true;
@@ -151,7 +150,6 @@ class App extends Component {//functionalities from Component passed over to App
         searchKey,
         error,
         isLoading,
-        sortKey,
       } = this.state;
 
     const page = (
@@ -180,8 +178,6 @@ class App extends Component {//functionalities from Component passed over to App
             </div>
           : <Table
             list={ list }
-            sortKey={sortKey}
-            onSort={this.onSort}
             onDismiss={ this.onDismiss }
           />
         }
@@ -196,10 +192,6 @@ class App extends Component {//functionalities from Component passed over to App
     );
   }
 }
-
-
-
-
 
 export default App;
 
