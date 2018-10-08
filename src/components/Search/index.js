@@ -1,7 +1,7 @@
 import React, { Component } from 'react';
 import PropTypes from 'prop-types';
 
-//Search component (has state, unlike Button/Table)
+//Search component (has state)
 class Search extends Component {
   componentDidMount() {
     if(this.input) {
